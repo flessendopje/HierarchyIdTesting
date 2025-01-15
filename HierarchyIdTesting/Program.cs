@@ -3,7 +3,7 @@
 
 using (var context = new AppDbContext())
 {
-    
+    //execute this once then comment or remove.
     context.Categories.AddRange([
         new Category { Name = "Parent 1", ParentId = null, Hierarchy = HierarchyId.Parse("/1/") },
         new Category { Name = "Parent 2", ParentId = null, Hierarchy = HierarchyId.Parse("/2/") },
@@ -15,19 +15,38 @@ using (var context = new AppDbContext())
     ]);
 
     context.SaveChanges();
-    Console.WriteLine("New person added!");
 
+    var parentId = new HierarchyId("/1/");
+    Console.WriteLine($"Parent hierarchy: {parentId}");
+    Console.WriteLine();
+    //get tree to root
+    Console.WriteLine("Hierarchy to top from parent (get tree to the top from current category):");
     var categoriesTree = await context.Categories
-        .Where(c => new HierarchyId("/1/1/2/").IsDescendantOf(c.Hierarchy))
+        .Where(c => parentId.IsDescendantOf(c.Hierarchy))
         .OrderBy(c => c.Hierarchy)
-        .ToListAsync();
-
-    foreach(var cat in categoriesTree)
+    .ToListAsync();
+    foreach (var cat in categoriesTree)
     {
         Console.WriteLine(cat.Hierarchy);
     }
 
+    Console.WriteLine();
+    //get tree down from here
+    Console.WriteLine("Hierarchy to bottom from parent (get all categories below the current one):");
+    var childCategories = await context.Categories
+        .Where(c => c.Hierarchy.IsDescendantOf(parentId) && c.Hierarchy != parentId)
+        .OrderBy(c => c.Hierarchy)
+        .ToListAsync();
+
+    foreach(var cat in childCategories)
+    {
+        Console.WriteLine(cat.Hierarchy);
+    }
+
+
+
     var categories = context.Categories;
+    Console.WriteLine();
     Console.WriteLine("List of people in the database:");
     foreach (var category in categories)
     {
